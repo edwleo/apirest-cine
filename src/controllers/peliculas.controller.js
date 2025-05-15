@@ -29,55 +29,74 @@ export const getPeliculaById = async (req, res) => {
 }
 
 export const createPeliculas = async (req, res) => {
-  //1. Obtener datos del JSON (input)
-  const {titulo, duracionmin, clasificacion, alanzamiento} = req.body
+  try {
+    //1. Obtener datos del JSON (input)
+    const {titulo, duracionmin, clasificacion, alanzamiento} = req.body
+  
+    //2. Ejecutar la consulta, pasa valores obtenidos
+    const [rows] = await pool.query("INSERT INTO peliculas (titulo, duracionmin, clasificacion, alanzamiento) VALUES (?,?,?,?)", 
+    [titulo, duracionmin, clasificacion, alanzamiento])
+  
+    //3. Enviar un objeto con el resultado del query
+    res.send({
+      id: rows.insertId,
+      titulo,
+      duracionmin,
+      clasificacion,
+      alanzamiento
+    })
+  } catch (error) {
+    return res.status(500).json({
+      message: 'No se pudo crear la película'
+    })
+  }
 
-  //2. Ejecutar la consulta, pasa valores obtenidos
-  const [rows] = await pool.query("INSERT INTO peliculas (titulo, duracionmin, clasificacion, alanzamiento) VALUES (?,?,?,?)", 
-  [titulo, duracionmin, clasificacion, alanzamiento])
-
-  //3. Enviar un objeto con el resultado del query
-  res.send({
-    id: rows.insertId,
-    titulo,
-    duracionmin,
-    clasificacion,
-    alanzamiento
-  })
 }
 
 export const updatePeliculas = async (req, res) => {
-  const id = req.params.id
-  const {titulo, duracionmin, clasificacion, alanzamiento} = req.body
-
-  const querySQL = `
-    UPDATE peliculas SET
-      titulo = ?,
-      duracionmin = ?,
-      clasificacion = ?,
-      alanzamiento = ?
-    WHERE id = ?
-  `
-  const [result] = await pool.query(querySQL, [titulo, duracionmin, clasificacion, alanzamiento, id])
+  try {
+    const id = req.params.id
+    const {titulo, duracionmin, clasificacion, alanzamiento} = req.body
   
-  if (result.affectedRows == 0){
-    return res.status(404).json({
-      message: 'El ID no existe'
-    })
+    const querySQL = `
+      UPDATE peliculas SET
+        titulo = ?,
+        duracionmin = ?,
+        clasificacion = ?,
+        alanzamiento = ?
+      WHERE id = ?
+    `
+    const [result] = await pool.query(querySQL, [titulo, duracionmin, clasificacion, alanzamiento, id])
+    
+    if (result.affectedRows == 0){
+      return res.status(404).json({
+        message: 'El ID no existe'
+      })
+    }
+  
+    res.json({ message: 'Actualización correcta' })
+  } catch (error) {
+    return res.status(500).json({
+      message: 'No concretó la actualización'
+    }) 
   }
-
-  res.json({ message: 'Actualización correcta' })
 }
 
 export const deletePeliculas = async (req, res) => {
-  const [result] = await pool.query("DELETE FROM peliculas WHERE id = ?", [req.params.id])
+  try {
+    const [result] = await pool.query("DELETE FROM peliculas WHERE id = ?", [req.params.id])
+    
+    if (result.affectedRows <= 0){
+      return res.status(404).json({
+        message: 'No existe registro con este ID'
+      })
+    }
   
-  if (result.affectedRows <= 0){
-    return res.status(404).json({
-      message: 'No existe registro con este ID'
+    //¿Y si borra correctamente?
+    res.sendStatus(204)
+  } catch (error) {
+    return res.status(500).json({
+      message: 'No se concretó la eliminación'
     })
   }
-
-  //¿Y si borra correctamente?
-  res.sendStatus(204)
 }
