@@ -2,18 +2,30 @@ import { pool } from "../db.js"
 
 //Lógica (backend) de cada endpoint
 export const getPeliculas = async (req, res) => {
-  const [rows] = await pool.query("SELECT * FROM peliculas")
-  res.json(rows)
+  try {
+    const [rows] = await pool.query("SELECT * FROM peliculas")
+    res.json(rows)
+  } catch (error) {
+    return res.status(500).json({
+      message: 'No se concretó la consulta'
+    })
+  }
 }
 
 export const getPeliculaById = async (req, res) => {
-  const [rows] = await pool.query("SELECT * FROM peliculas WHERE id = ?", [req.params.id])
+  try {
+    const [rows] = await pool.query("SELECT * FROM peliculas WHERE id = ?", [req.params.id])
+    
+    if (rows.length <= 0) return res.status(404).json({
+      message: 'No existe película con este ID'
+    })
   
-  if (rows.length <= 0) return res.status(404).json({
-    message: 'No existe película con este ID'
-  })
-
-  res.json(rows)
+    res.json(rows)
+  } catch (error) {
+    return res.status(500).json({
+      message: 'No se contretó la consulta'
+    })
+  }
 }
 
 export const createPeliculas = async (req, res) => {
